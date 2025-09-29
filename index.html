@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Outreach Tracker</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(to bottom right, #eff6ff, #fed7aa);
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    .container { max-width: 112rem; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .header h1 { font-size: 1.875rem; font-weight: bold; color: #1e3a8a; }
+    .save-indicator { font-size: 0.75rem; color: #22c55e; margin-top: 0.25rem; }
+    .btn-group { display: flex; gap: 0.5rem; }
+    .btn { 
+      padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; 
+      cursor: pointer; display: flex; align-items: center; gap: 0.5rem;
+      font-weight: 500; transition: all 0.2s;
+    }
+    .btn-orange { background: #f97316; color: white; }
+    .btn-orange:hover { background: #ea580c; }
+    .btn-gray { background: #d1d5db; color: #1f2937; }
+    .btn-gray:hover { background: #9ca3af; }
+    .btn-red { background: transparent; color: #ef4444; border: none; padding: 0; }
+    .btn-red:hover { color: #dc2626; }
+    .clients { display: flex; flex-direction: column; gap: 1.5rem; }
+    .client-card { background: white; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); padding: 1rem; }
+    .client-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .client-header h2 { font-size: 1.25rem; font-weight: bold; color: #1e3a8a; }
+    .timeline { overflow-x: auto; padding-bottom: 0.5rem; }
+    .timeline-inner { display: flex; gap: 0.75rem; min-width: max-content; }
+    .step-container { display: flex; flex-direction: column; align-items: center; }
+    .step { 
+      width: 8rem; height: 5rem; border-radius: 0.5rem; border: 2px solid;
+      display: flex; align-items: center; justify-content: center; text-align: center;
+      font-size: 0.75rem; font-weight: 500; padding: 0.5rem; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .step-incomplete { background: #dbeafe; border-color: #93c5fd; color: #1e3a8a; }
+    .step-incomplete:hover { background: #bfdbfe; }
+    .step-complete { background: #22c55e; border-color: #16a34a; color: white; }
+    .step-actions { display: flex; gap: 0.25rem; margin-top: 0.5rem; }
+    .icon-btn { 
+      background: none; border: none; cursor: pointer; padding: 0.25rem;
+      transition: color 0.2s;
+    }
+    .icon-btn-blue { color: #3b82f6; }
+    .icon-btn-blue:hover { color: #2563eb; }
+    .icon-btn-orange { color: #f97316; }
+    .icon-btn-orange:hover { color: #ea580c; }
+    .modal { 
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); 
+      display: flex; align-items: center; justify-content: center; z-index: 50; padding: 1rem;
+    }
+    .modal-content { 
+      background: white; border-radius: 0.5rem; padding: 1.5rem; 
+      max-width: 28rem; width: 100%;
+    }
+    .modal-header { 
+      display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;
+    }
+    .modal-title { font-size: 1.25rem; font-weight: bold; color: #1e3a8a; margin-bottom: 1rem; }
+    .modal-subtitle { font-size: 0.875rem; color: #6b7280; }
+    .input { 
+      width: 100%; border: 2px solid #93c5fd; border-radius: 0.5rem; 
+      padding: 0.5rem 1rem; margin-bottom: 1rem; font-size: 1rem;
+    }
+    .input:focus { outline: none; border-color: #f97316; }
+    .textarea { 
+      width: 100%; border: 2px solid #93c5fd; border-radius: 0.5rem; 
+      padding: 0.5rem 1rem; margin-bottom: 1rem; min-height: 8rem; 
+      font-family: inherit; font-size: 1rem;
+    }
+    .textarea:focus { outline: none; border-color: #f97316; }
+    .btn-group-modal { display: flex; gap: 0.5rem; }
+    .btn-group-modal .btn { flex: 1; justify-content: center; }
+    .empty-state { text-align: center; padding: 3rem; color: #6b7280; }
+    .hidden { display: none; }
+    svg { display: inline-block; vertical-align: middle; }
+    .close-btn { background: none; border: none; color: #6b7280; cursor: pointer; padding: 0; }
+    .close-btn:hover { color: #1f2937; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>Outreach Tracker</h1>
+        <div class="save-indicator" id="saveIndicator">✓ All changes saved</div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-orange" onclick="showAddClientModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Add Client
+        </button>
+      </div>
+    </div>
+
+    <div class="clients" id="clientsList"></div>
+
+    <div id="emptyState" class="empty-state">
+      <p style="font-size: 1.125rem;">No clients yet. Click "Add Client" to get started!</p>
+    </div>
+  </div>
+
+  <div id="addClientModal" class="modal hidden">
+    <div class="modal-content">
+      <h2 class="modal-title">Add New Client</h2>
+      <input type="text" id="clientNameInput" class="input" placeholder="Client name">
+      <div class="btn-group-modal">
+        <button class="btn btn-orange" onclick="addClient()">Add</button>
+        <button class="btn btn-gray" onclick="closeModal('addClientModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="noteModal" class="modal hidden">
+    <div class="modal-content">
+      <h2 class="modal-title">Add Note</h2>
+      <textarea id="noteInput" class="textarea" placeholder="Enter your note..."></textarea>
+      <div class="btn-group-modal">
+        <button class="btn btn-orange" onclick="saveNote()">Save</button>
+        <button class="btn btn-gray" onclick="closeModal('noteModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewNoteModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="viewNoteClient" style="margin-bottom: 0.25rem;"></h2>
+          <p class="modal-subtitle" id="viewNoteStep"></p>
+        </div>
+        <button class="close-btn" onclick="closeModal('viewNoteModal')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <p id="viewNoteContent" style="color: #1f2937; white-space: pre-wrap;"></p>
+    </div>
+  </div>
+
+  <script>
+    const steps = [
+      'Initial Outreach', 'Reply', 'First Meeting Scheduled', 'Audit Performed',
+      'First Meeting Concluded', 'GBP Optimization Begun', 'Profile Optimized',
+      'Analytics Prepped', 'Review Meeting', '1st Week of Posting',
+      '1st Review Set Managed', 'Deep Analytics Dive', '2nd Week of Posting',
+      '2nd Review Set Managed', 'Check-in Call', '3rd Week of Posting',
+      '3rd Review Set Managed', '4th Week of Posting', '4th Review Set Managed',
+      'Analytics Pulled', 'Monthly Review Call'
+    ];
+
+    let clients = [];
+    let editingNote = null;
+
+    // Load data from localStorage on page load
+    function loadData() {
+      const saved = localStorage.getItem('outreachTrackerData');
+      if (saved) {
+        try {
+          clients = JSON.parse(saved);
+        } catch (e) {
+          console.error('Error loading data:', e);
+          clients = [];
+        }
+      }
+      render();
+    }
+
+    // Save data to localStorage
+    function saveData() {
+      try {
+        localStorage.setItem('outreachTrackerData', JSON.stringify(clients));
+        showSaveIndicator();
+      } catch (e) {
+        console.error('Error saving data:', e);
+        alert('Could not save data. Your browser storage might be full.');
+      }
+    }
+
+    function showSaveIndicator() {
+      const indicator = document.getElementById('saveIndicator');
+      indicator.textContent = '✓ All changes saved';
+      indicator.style.color = '#22c55e';
+    }
+
+    function showAddClientModal() {
+      document.getElementById('addClientModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('clientNameInput').focus(), 100);
+    }
+
+    function addClient() {
+      const name = document.getElementById('clientNameInput').value.trim();
+      if (name) {
+        clients.push({
+          id: Date.now(),
+          name,
+          progress: steps.map(step => ({ step, completed: false, note: '' }))
+        });
+        saveData();
+        render();
+        document.getElementById('clientNameInput').value = '';
+        closeModal('addClientModal');
+      }
+    }
+
+    function deleteClient(id) {
+      if (confirm('Delete this client?')) {
+        clients = clients.filter(c => c.id !== id);
+        saveData();
+        render();
+      }
+    }
+
+    function toggleStep(clientId, stepIdx) {
+      const client = clients.find(c => c.id === clientId);
+      if (client) {
+        client.progress[stepIdx].completed = !client.progress[stepIdx].completed;
+        saveData();
+        render();
+      }
+    }
+
+    function showNoteModal(clientId, stepIdx) {
+      const client = clients.find(c => c.id === clientId);
+      if (client) {
+        editingNote = { clientId, stepIdx };
+        document.getElementById('noteInput').value = client.progress[stepIdx].note;
+        document.getElementById('noteModal').classList.remove('hidden');
+        setTimeout(() => document.getElementById('noteInput').focus(), 100);
+      }
+    }
+
+    function saveNote() {
+      if (editingNote) {
+        const client = clients.find(c => c.id === editingNote.clientId);
+        if (client) {
+          client.progress[editingNote.stepIdx].note = document.getElementById('noteInput').value;
+          saveData();
+          render();
+        }
+        editingNote = null;
+        closeModal('noteModal');
+      }
+    }
+
+    function viewNote(clientId, stepIdx) {
+      const client = clients.find(c => c.id === clientId);
+      if (client) {
+        document.getElementById('viewNoteClient').textContent = client.name;
+        document.getElementById('viewNoteStep').textContent = client.progress[stepIdx].step;
+        document.getElementById('viewNoteContent').textContent = client.progress[stepIdx].note;
+        document.getElementById('viewNoteModal').classList.remove('hidden');
+      }
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+      editingNote = null;
+    }
+
+    function render() {
+      const list = document.getElementById('clientsList');
+      const empty = document.getElementById('emptyState');
+      
+      if (clients.length === 0) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+      list.innerHTML = clients.map(client => `
+        <div class="client-card">
+          <div class="client-header">
+            <h2>${client.name}</h2>
+            <button class="btn-red" onclick="deleteClient(${client.id})">Delete</button>
+          </div>
+          <div class="timeline">
+            <div class="timeline-inner">
+              ${client.progress.map((item, idx) => `
+                <div class="step-container">
+                  <button class="step ${item.completed ? 'step-complete' : 'step-incomplete'}" 
+                    onclick="toggleStep(${client.id}, ${idx})">
+                    ${item.step}
+                  </button>
+                  <div class="step-actions">
+                    ${item.note ? `
+                      <button class="icon-btn icon-btn-orange" onclick="viewNote(${client.id}, ${idx})" title="View note">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                      </button>
+                    ` : ''}
+                    <button class="icon-btn icon-btn-blue" onclick="showNoteModal(${client.id}, ${idx})" title="Add/edit note">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Keyboard shortcuts
+    document.getElementById('clientNameInput').addEventListener('keypress', e => {
+      if (e.key === 'Enter') addClient();
+    });
+
+    // Load data when page loads
+    loadData();
+  </script>
+</body>
+</html>
